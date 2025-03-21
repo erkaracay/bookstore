@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'books',
     'corsheaders',
+    'orders',
 ]
 
 REST_FRAMEWORK = {
@@ -141,6 +142,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
     'SECURITY_DEFINITIONS': {
         'Bearer': {
             'type': 'apiKey',
