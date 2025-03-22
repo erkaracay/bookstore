@@ -41,3 +41,14 @@ class OrderStatusUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['status']
+
+    def validate_status(self, value):
+        instance = self.instance
+
+        if instance.status == 'shipped' and value not in ['shipped']:
+            raise serializers.ValidationError("A shipped order cannot be updated to any other status.")
+
+        if instance.status == 'cancelled' and value not in ['cancelled']:
+            raise serializers.ValidationError("A cancelled order cannot be updated.")
+
+        return value

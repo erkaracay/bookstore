@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from .models import Order
 from .serializers import OrderSerializer, OrderStatusUpdateSerializer
 
@@ -20,13 +21,20 @@ class OrderDetailView(generics.RetrieveAPIView):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-class OrderStatusUpdateView(generics.UpdateAPIView):
-    queryset = Order.objects.all()
-    serializer_class = OrderStatusUpdateSerializer
-    permission_classes = [permissions.IsAdminUser]
+class OrderStatusUpdateView(APIView):
+    permission_classes = [IsAuthenticated]  # Or use IsAdminUser for admin-only access
 
-    def get_queryset(self):
-        return Order.objects.all()
+    def patch(self, request, pk):
+        try:
+            order = Order.objects.get(pk=pk, user=request.user)
+        except Order.DoesNotExist:
+            return Response({"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = OrderStatusUpdateSerializer(order, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class CancelOrderView(APIView):
     permission_classes = [permissions.IsAuthenticated]
