@@ -4,6 +4,8 @@ from rest_framework.views import APIView
 from .models import Order
 from .serializers import OrderSerializer, OrderStatusUpdateSerializer
 from users.permissions import IsOwnerOrAdmin
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 VALID_TRANSITIONS = {
     'pending': ['shipped', 'cancelled'],
@@ -16,11 +18,26 @@ class OrderListCreateView(generics.ListCreateAPIView):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-def get_queryset(self):
-    user = self.request.user
-    if user.is_superuser or user.groups.filter(name='Admin').exists():
-        return Order.objects.all()
-    return Order.objects.filter(user=user)
+    @swagger_auto_schema(
+        operation_description="Retrieve a list of orders or create a new order.",
+        responses={200: OrderSerializer(many=True), 201: OrderSerializer, 400: "Validation Error"},
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Create a new order.",
+        request_body=OrderSerializer,
+        responses={201: OrderSerializer, 400: "Validation Error"},
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser or user.groups.filter(name='Admin').exists():
+            return Order.objects.all()
+        return Order.objects.filter(user=user)
 
     def perform_create(self, serializer):
         # When creating an order, associate the logged-in user with the order
@@ -29,12 +46,27 @@ def get_queryset(self):
 class OrderDetailView(generics.RetrieveAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
+
+    @swagger_auto_schema(
+        operation_description="Retrieve an order by ID.",
+        responses={200: OrderSerializer, 404: "Not Found"},
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
 class OrderStatusUpdateView(generics.UpdateAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderStatusUpdateSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
+
+    @swagger_auto_schema(
+        operation_description="Update the status of an order.",
+        request_body=OrderStatusUpdateSerializer,
+        responses={200: OrderStatusUpdateSerializer, 400: "Validation Error", 403: "Forbidden"},
+    )
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
         order = self.get_object()
@@ -58,6 +90,10 @@ class OrderStatusUpdateView(generics.UpdateAPIView):
 class CancelOrderView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
 
+    @swagger_auto_schema(
+        operation_description="Cancel an order by ID.",
+        responses={200: "Order cancelled successfully.", 400: "Validation Error", 404: "Not Found"},
+    )
     def post(self, request, pk):
         try:
             order = Order.objects.get(pk=pk, user=request.user)
