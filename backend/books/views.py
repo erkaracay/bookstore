@@ -3,6 +3,7 @@ from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
 from .models import Book
 from .serializers import BookSerializer
+from users.permissions import IsAdminOrSeller
 
 class BookListCreateView(generics.ListCreateAPIView):
     queryset = Book.objects.all()
@@ -11,7 +12,7 @@ class BookListCreateView(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
+        return [IsAdminOrSeller()]
 
     def create(self, request, *args, **kwargs):
         is_many = isinstance(request.data, list)

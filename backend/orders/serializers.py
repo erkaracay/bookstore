@@ -6,6 +6,19 @@ class OrderItemSerializer(serializers.ModelSerializer):
         model = OrderItem
         fields = ['book', 'quantity']
 
+    def validate_quantity(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Quantity must be at least 1.")
+        return value
+
+    def validate(self, attrs):
+        book = attrs.get('book')
+        quantity = attrs.get('quantity')
+
+        if book and quantity and book.stock < quantity:
+            raise serializers.ValidationError(f"Not enough stock for '{book.title}'. Only {book.stock} available.")
+        return attrs
+
 class OrderSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source='user.id')
     items = OrderItemSerializer(many=True)
@@ -16,6 +29,9 @@ class OrderSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'user', 'created_at', 'status', 'total_price']
 
     def create(self, validated_data):
+        if not items_data:
+            raise serializers.ValidationError("Order must contain at least one item.")
+
         items_data = validated_data.pop('items')
         order = Order.objects.create(user=self.context['request'].user)
         total = 0

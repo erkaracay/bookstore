@@ -14,3 +14,10 @@ class BookSerializer(serializers.ModelSerializer):
         if qs.exists():
             raise serializers.ValidationError("A book with this title already exists.")
         return value
+
+    def validate(self, attrs):
+        if attrs.get('price', 0) <= 0:
+            raise serializers.ValidationError("Price must be greater than 0.")
+        if attrs.get('stock', 0) < 0:
+            raise serializers.ValidationError("Stock cannot be negative.")
+        return attrs
