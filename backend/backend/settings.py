@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'books',
     'corsheaders',
     'orders',
+    'users',
 ]
 
 REST_FRAMEWORK = {
@@ -152,3 +153,5 @@ SWAGGER_SETTINGS = {
         }
     }
 }
+
+AUTH_USER_MODEL = 'users.User'

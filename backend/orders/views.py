@@ -11,9 +11,12 @@ class OrderListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        if self.request.user.is_staff:
+            return Order.objects.all()
         return Order.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
+        # When creating an order, associate the logged-in user with the order
         serializer.save(user=self.request.user)
 
 class OrderDetailView(generics.RetrieveAPIView):
