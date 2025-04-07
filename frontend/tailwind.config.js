@@ -1,10 +1,13 @@
 export default {
-  content: [
-    './index.html',
-    './src/**/*.{vue,js,ts,jsx,tsx}',
-  ],
+  content: ['./index.html', './src/**/*.{vue,js,ts}'],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        primary: '#1E40AF',
+        accent: '#60A5FA',
+        neutral: '#F3F4F6',
+      },
+    },
   },
   plugins: [],
 }
