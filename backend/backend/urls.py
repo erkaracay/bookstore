@@ -45,6 +45,7 @@ urlpatterns = [
     path("books/", include("books.urls")),
     path("orders/", include("orders.urls")),
     path("users/", include("users.urls")),
+    path("companies/", include("companies.urls")),
 
     # JWT Auth
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),

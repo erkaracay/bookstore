@@ -10,13 +10,14 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {'password': {'write_only': True}}
 
     def validate(self, attrs):
-        user_type = attrs.get('user_type')
-        company_name = attrs.get('company_name')
+        user_type = attrs.get("user_type")
+        company_name = attrs.get("company_name")
 
-        if user_type == 'seller' and not company_name:
-            raise serializers.ValidationError("Sellers must provide a company name.")
-        if user_type == 'buyer' and company_name:
-            raise serializers.ValidationError("Buyers should not provide a company name.")
+        if user_type == "seller":
+            if not company_name or company_name.strip() == "":
+                raise serializers.ValidationError({"company_name": "Sellers must provide a company name."})
+        elif user_type == "buyer" and company_name and company_name.strip() != "":
+            raise serializers.ValidationError({"company_name": "Buyers should not provide a company name."})
 
         return attrs
 
