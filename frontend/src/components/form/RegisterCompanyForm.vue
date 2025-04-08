@@ -1,0 +1,118 @@
+<template>
+  <form @submit.prevent="handleRegister" class="space-y-6 relative">
+    <FormField
+      v-model="form.company_name"
+      name="Company Name"
+      field="company_name"
+      type="text"
+      :error="errors.company_name"
+      hint="Required company name"
+      @validate="validateField"
+      @focus="focused = 'company_name'"
+      @blur="focused = ''"
+      :focused="focused === 'company_name'"
+    />
+
+    <FormField
+      v-model="form.email"
+      name="Email"
+      field="email"
+      type="email"
+      :error="errors.email"
+      hint="Must be a valid email address"
+      @validate="validateField"
+      @focus="focused = 'email'"
+      @blur="focused = ''"
+      :focused="focused === 'email'"
+    />
+
+    <FormField
+      v-model="form.password"
+      name="Password"
+      field="password"
+      type="password"
+      :error="errors.password"
+      hint="Min 6 characters required"
+      @validate="validateField"
+      @focus="focused = 'password'"
+      @blur="focused = ''"
+      :focused="focused === 'password'"
+    />
+
+    <button type="submit" class="w-full bg-primary text-white py-2 rounded hover:bg-opacity-90">
+      Register as Seller (Company)
+    </button>
+
+    <div v-if="success" class="mt-4 text-sm text-green-600 bg-green-50 p-3 rounded border border-green-300">
+      🎉 Registration successful! Redirecting to login...
+    </div>
+  </form>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { z } from 'zod'
+import axios from '@/utils/axios'
+import FormField from '@/components/form/FormField.vue'
+
+const router = useRouter()
+const focused = ref('')
+const success = ref(false)
+
+const form = ref({
+  company_name: '',
+  email: '',
+  password: '',
+})
+
+const errors = ref({})
+
+const schema = z.object({
+  company_name: z.string().min(1, 'Company name is required'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+})
+
+function validateField(field) {
+  try {
+    schema.pick({ [field]: true }).parse({ [field]: form.value[field] })
+    delete errors.value[field]
+  } catch (e) {
+    errors.value[field] = e.errors?.[0]?.message
+  }
+}
+
+function validateAll() {
+  const result = schema.safeParse(form.value)
+  if (!result.success) {
+    const fieldErrors = {}
+    result.error.errors.forEach(err => {
+      fieldErrors[err.path[0]] = err.message
+    })
+    errors.value = fieldErrors
+    return false
+  }
+  errors.value = {}
+  return true
+}
+
+async function handleRegister() {
+  if (!validateAll()) return
+
+  try {
+    await axios.post('/users/register/', {
+      first_name: 'Company',
+      last_name: 'Account',
+      ...form.value,
+      user_type: 'seller',
+    })
+
+    success.value = true
+    setTimeout(() => router.push('/login'), 2000)
+  } catch (err) {
+    console.error(err)
+    alert('Something went wrong!')
+  }
+}
+</script>
