@@ -8,6 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from companies.models import Company
+from rest_framework.permissions import IsAuthenticated
 
 User = get_user_model()
 
@@ -76,3 +77,10 @@ class LogoutView(APIView):
             return Response({"detail": "Logged out successfully."}, status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
             return Response({"detail": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
+
+class UserMeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)

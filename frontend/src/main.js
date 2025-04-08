@@ -3,9 +3,16 @@ import './style.css'
 import App from './App.vue'
 import { createPinia } from 'pinia'
 import router from './router'
+import { useAuthStore } from '@/store/auth'
 
 const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
 app.mount('#app')
+
+const auth = useAuthStore()
+
+if (auth.access) {
+  auth.fetchUser()
+}

@@ -1,6 +1,13 @@
 <template>
   <form @submit.prevent="handleRegister" class="space-y-6 relative">
-    <!-- First + Last Name -->
+    <div
+      v-if="formError"
+      class="bg-red-100 border border-red-300 text-red-700 px-4 py-2 rounded text-sm flex items-center justify-between"
+    >
+      <span>{{ formError }}</span>
+      <button @click="formError = ''" class="text-red-500 hover:underline text-xs">Dismiss</button>
+    </div>
+
     <div class="grid grid-cols-2 gap-2">
       <FormField
         v-model="form.first_name"
@@ -81,6 +88,8 @@ import FormField from '@/components/form/FormField.vue'
 const router = useRouter()
 const focused = ref('')
 const success = ref(false)
+const errors = ref({})
+const formError = ref('')
 
 const form = ref({
   first_name: '',
@@ -88,8 +97,6 @@ const form = ref({
   email: '',
   password: '',
 })
-
-const errors = ref({})
 
 // zod schema
 const schema = z.object({
@@ -100,6 +107,7 @@ const schema = z.object({
 })
 
 function validateField(field) {
+  formError.value = ''
   try {
     schema.pick({ [field]: true }).parse({ [field]: form.value[field] })
     delete errors.value[field]
@@ -134,8 +142,32 @@ async function handleRegister() {
     success.value = true
     setTimeout(() => router.push('/login'), 2000)
   } catch (err) {
-    console.error(err)
-    alert('Something went wrong!')
+    console.error('Registration error:', err)
+
+    const response = err.response
+    if (!response) {
+      formError.value = 'Network error. Please check your connection.'
+      return
+    }
+
+    if (response.status === 400) {
+      // DRF returns field errors in 400
+      const data = response.data
+
+      if (data.email?.[0]?.includes('already exists')) {
+        formError.value = 'An account with this email already exists.'
+      } else if (data.password?.[0]) {
+        formError.value = `Password: ${data.password[0]}`
+      } else {
+        // fallback for other field validation
+        formError.value = 'Please correct the highlighted fields.'
+      }
+    } else if (response.status >= 500) {
+      formError.value = 'Server error. Please try again later.'
+    } else {
+      formError.value = 'Registration failed. Please check your information.'
+    }
   }
+
 }
 </script>

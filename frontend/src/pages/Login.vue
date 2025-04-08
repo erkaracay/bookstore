@@ -4,6 +4,13 @@
       <h2 class="text-2xl font-bold text-primary mb-6 text-center">Login</h2>
 
       <form @submit.prevent="handleLogin" class="space-y-6 relative">
+        <div
+          v-if="formError"
+          class="bg-red-100 border border-red-300 text-red-700 px-4 py-2 rounded text-sm flex items-center justify-between">
+          <span>{{ formError }}</span>
+          <button @click="formError = ''" class="text-red-500 hover:underline text-xs">Dismiss</button>
+        </div>
+
         <FormField
           v-model="form.email"
           name="Email"
@@ -30,6 +37,16 @@
           :focused="focused === 'password'"
         />
 
+        <div class="flex items-center gap-2 pl-1 text-sm mt-2">
+          <input
+            type="checkbox"
+            id="remember"
+            v-model="rememberMe"
+            class="accent-primary shrink-0 w-4 h-4 mt-0.5"
+          />
+          <label for="remember" class="text-gray-600 cursor-pointer select-none">Remember Me</label>
+        </div>
+
         <button
           type="submit"
           class="w-full bg-primary text-white py-2 rounded hover:bg-opacity-90"
@@ -55,11 +72,15 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { z } from 'zod'
 import axios from '@/utils/axios'
+import { useAuthStore } from '@/store/auth'
 import FormField from '@/components/form/FormField.vue'
 
+const auth = useAuthStore()
 const router = useRouter()
 const focused = ref('')
 const success = ref(false)
+const rememberMe = ref(true)
+const formError = ref('')
 
 const form = ref({
   email: '',
@@ -74,6 +95,7 @@ const schema = z.object({
 })
 
 function validateField(field) {
+  formError.value = ''
   try {
     schema.pick({ [field]: true }).parse({ [field]: form.value[field] })
     delete errors.value[field]
@@ -105,17 +127,21 @@ async function handleLogin() {
       password: form.value.password,
     })
 
-    localStorage.setItem('access', res.data.access)
-    localStorage.setItem('refresh', res.data.refresh)
+    const storage = rememberMe.value ? localStorage : sessionStorage
+    storage.setItem('access', res.data.access)
+    storage.setItem('refresh', res.data.refresh)
 
+    auth.setTokens(res.data)
+    await auth.fetchUser()
+
+    formError.value = ''
     success.value = true
-    setTimeout(() => {
-      router.push('/')
-    }, 1500)
+    setTimeout(() => router.push('/'), 1500)
+
   } catch (err) {
     console.error(err)
-    errors.value.email = 'Invalid email or password'
-    errors.value.password = ' '
+    formError.value = 'Invalid email or password. Please try again.'
   }
 }
 </script>
+
