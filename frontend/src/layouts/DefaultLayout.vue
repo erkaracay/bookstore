@@ -17,7 +17,7 @@
                 @click="showDropdown = !showDropdown"
                 class="flex items-center gap-2 text-gray-700 hover:text-primary transition"
               >
-                👋 Hi, {{ auth.user?.first_name }}
+                👋 Hi, {{ auth.user?.first_name === 'Company' && auth.user?.last_name === 'Account' ? auth.user?.company_name : auth.user?.first_name }}
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
@@ -28,10 +28,10 @@
                 v-if="showDropdown"
                 class="absolute right-0 mt-2 w-40 bg-white border rounded shadow z-50"
               >
-                <router-link
-                  to="/dashboard"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >Dashboard</router-link>
+              <router-link to="/dashboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                {{ dashboardLabel }}
+              </router-link>
+
 
                 <!-- Future: Profile page -->
                 <router-link
@@ -40,7 +40,7 @@
                 >Profile</router-link>
 
                 <button
-                  @click="auth.logout"
+                  @click="handleLogout"
                   class="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-100"
                 >Logout</button>
               </div>
@@ -68,15 +68,38 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuthStore } from '@/store/auth'
 import { useClickOutside } from '@/composables/useClickOutside'
+import { useRouter } from 'vue-router'
 
 const auth = useAuthStore()
+const router = useRouter()
 const showDropdown = ref(false)
 const dropdownRef = ref(null)
+
+const dashboardLabel = computed(() => {
+  if (!auth.user) return 'Dashboard'
+
+  switch (auth.user.user_type) {
+    case 'buyer':
+      return 'My Orders'
+    case 'seller':
+      return 'My Books'
+    case 'admin':
+      return 'Admin Panel'
+    default:
+      return 'Dashboard'
+  }
+})
 
 useClickOutside(dropdownRef, () => {
   showDropdown.value = false
 })
+
+const handleLogout = () => {
+  router.push('/')
+  auth.logout()
+  showDropdown.value = false
+}
 </script>

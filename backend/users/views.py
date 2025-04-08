@@ -9,6 +9,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from companies.models import Company
 from rest_framework.permissions import IsAuthenticated
+from companies.serializers import CompanySerializer
 
 User = get_user_model()
 
