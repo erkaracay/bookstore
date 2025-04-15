@@ -45,6 +45,9 @@
                 >Logout</button>
               </div>
             </div>
+            <router-link to="/cart" class="text-gray-700 hover:text-primary transition">
+              🛒 Cart
+            </router-link>
           </template>
 
           <template v-else>

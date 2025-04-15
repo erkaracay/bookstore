@@ -39,17 +39,17 @@
         </button>
       </div>
 
-      <!-- Add to Order Button -->
+      <!-- Add to Cart Button -->
       <button
-        @click="addToOrder"
+        @click="addToCart"
         class="bg-primary text-white px-5 py-2 rounded hover:bg-opacity-90 transition whitespace-nowrap"
         :disabled="adding || book.stock === 0 || quantity < 1"
       >
-        {{ adding ? 'Adding...' : book.stock === 0 ? 'Out of Stock' : 'Add to Order' }}
+        {{ adding ? 'Adding...' : book.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
       </button>
     </div>
 
-      <p v-if="addedSuccess" class="text-green-600 mt-4">✔️ Book added to order!</p>
+      <p v-if="addedSuccess" class="text-green-600 mt-4">✔️ Book added to cart!</p>
     </div>
   </div>
 </template>
@@ -76,22 +76,24 @@ watch(quantity, (val) => {
   }
 })
 
-async function addToOrder() {
+async function addToCart() {
   if (!book.value || quantity.value < 1) return
 
   try {
     adding.value = true
-    await axios.post('/orders/', {
-      items: [{ book: book.value.id, quantity: quantity.value }],
+    await axios.post('/cart/items/', {
+      book_id: book.value.id,
+      quantity: quantity.value,
     })
     addedSuccess.value = true
   } catch (err) {
-    console.error('Add to order failed:', err)
-    alert('Could not add book to order.')
+    console.error('Add to cart failed:', err)
+    alert('Could not add book to cart.')
   } finally {
     adding.value = false
   }
 }
+
 
 onMounted(async () => {
   try {

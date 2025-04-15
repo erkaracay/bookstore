@@ -41,7 +41,7 @@
 
         <button
           v-if="auth.user?.user_type === 'buyer'"
-          @click.stop.prevent="addToOrder(book.id)"
+          @click.stop.prevent="addToCart(book.id)"
           class="text-sm px-3 py-1 rounded transition"
           :class="[
             book.stock === 0
@@ -96,10 +96,11 @@ onMounted(async () => {
   }
 })
 
-async function addToOrder(bookId) {
+async function addToCart(bookId) {
   try {
-    await axios.post('/orders/', {
-      items: [{ book: bookId, quantity: 1 }],
+    await axios.post('/cart/items/', {
+      book_id: bookId,
+      quantity: 1,
     })
 
     const book = books.value.find(b => b.id === bookId)
@@ -114,7 +115,7 @@ async function addToOrder(bookId) {
     }, 3000)
   } catch (err) {
     console.error(err)
-    alert('Failed to add book to order.')
+    alert('Failed to add book to cart.')
   }
 }
 

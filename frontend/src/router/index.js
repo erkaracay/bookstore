@@ -6,6 +6,7 @@ import Register from '@/pages/Register.vue'
 import Dashboard from '@/pages/Dashboard.vue'
 import NotFound from '@/pages/NotFound.vue'
 import BookDetail from '@/pages/BookDetail.vue'
+import Cart from '@/pages/Cart.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -13,6 +14,7 @@ const routes = [
   { path: '/register', name: 'Register', component: Register, meta: { guestOnly: true } },
   { path: '/dashboard', name: 'Dashboard', component: Dashboard, meta: { requiresAuth: true } },
   { path: '/books/:slug', name: 'BookDetail', component: BookDetail },
+  { path: '/cart', component: Cart },
   // { path: '/admin', component: AdminDashboard, meta: { requiresAuth: true, role: 'admin' } },
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound },
 ]

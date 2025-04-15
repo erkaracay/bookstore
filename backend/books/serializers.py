@@ -21,3 +21,8 @@ class BookSerializer(serializers.ModelSerializer):
         if attrs.get('stock', 0) < 0:
             raise serializers.ValidationError("Stock cannot be negative.")
         return attrs
+
+class SimpleBookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Book
+        fields = ['id', 'title']
