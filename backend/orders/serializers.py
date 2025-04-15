@@ -8,7 +8,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ['book', 'quantity']
+        fields = ['book', 'quantity', 'price']
 
     def validate_quantity(self, value):
         if value <= 0:
@@ -49,7 +49,14 @@ class OrderSerializer(serializers.ModelSerializer):
 
             book.stock -= quantity
             book.save()
-            OrderItem.objects.create(order=order, book=book, quantity=quantity)
+
+            OrderItem.objects.create(
+                order=order,
+                book=book,
+                quantity=quantity,
+                price=book.price
+            )
+
             total += book.price * quantity
 
         order.total_price = total

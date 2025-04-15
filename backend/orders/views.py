@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError
 from .models import Order
 from .serializers import OrderSerializer, OrderStatusUpdateSerializer
 from users.permissions import IsOwnerOrAdmin
@@ -13,35 +14,32 @@ VALID_TRANSITIONS = {
     'cancelled': [],
 }
 
-class OrderListCreateView(generics.ListCreateAPIView):
+class OrderListView(generics.ListAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     @swagger_auto_schema(
-        operation_description="Retrieve a list of orders or create a new order.",
-        responses={200: OrderSerializer(many=True), 201: OrderSerializer, 400: "Validation Error"},
+        operation_description="Get a list of your past orders. Orders are created via cart checkout only.",
+        responses={200: OrderSerializer(many=True)},
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
 
-    @swagger_auto_schema(
-        operation_description="Create a new order.",
-        request_body=OrderSerializer,
-        responses={201: OrderSerializer, 400: "Validation Error"},
-    )
-    def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
-
     def get_queryset(self):
         user = self.request.user
-        if user.is_superuser or user.groups.filter(name='Admin').exists():
+        if user.is_superuser or user.groups.filter(name__iexact='admin').exists():
             return Order.objects.all()
         return Order.objects.filter(user=user)
 
-    def perform_create(self, serializer):
-        # When creating an order, associate the logged-in user with the order
-        serializer.save(user=self.request.user)
+    @swagger_auto_schema(
+        operation_description="❌ Disabled. Use /cart/checkout/ to create orders.",
+        request_body=openapi.Schema(type=openapi.TYPE_OBJECT),
+        responses={400: "Manual order creation is not allowed."}
+    )
+    def post(self, request, *args, **kwargs):
+        raise ValidationError("Orders must be created via /cart/checkout/. Manual creation is not allowed.")
+
 
 class OrderDetailView(generics.RetrieveAPIView):
     queryset = Order.objects.all()
@@ -49,11 +47,12 @@ class OrderDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
 
     @swagger_auto_schema(
-        operation_description="Retrieve an order by ID.",
+        operation_description="Retrieve details of a specific order by ID.",
         responses={200: OrderSerializer, 404: "Not Found"},
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
 
 class OrderStatusUpdateView(generics.UpdateAPIView):
     queryset = Order.objects.all()
@@ -61,9 +60,9 @@ class OrderStatusUpdateView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
 
     @swagger_auto_schema(
-        operation_description="Update the status of an order.",
+        operation_description="Update the status of an order (admin only for shipping).",
         request_body=OrderStatusUpdateSerializer,
-        responses={200: OrderStatusUpdateSerializer, 400: "Validation Error", 403: "Forbidden"},
+        responses={200: OrderStatusUpdateSerializer, 400: "Invalid transition", 403: "Forbidden"},
     )
     def put(self, request, *args, **kwargs):
         return super().put(request, *args, **kwargs)
@@ -79,7 +78,7 @@ class OrderStatusUpdateView(generics.UpdateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        if new_status == 'shipped' and not request.user.groups.filter(name='Admin').exists():
+        if new_status == 'shipped' and not request.user.groups.filter(name__iexact='admin').exists():
             return Response(
                 {"detail": "Only admins can mark an order as shipped."},
                 status=status.HTTP_403_FORBIDDEN
@@ -87,12 +86,13 @@ class OrderStatusUpdateView(generics.UpdateAPIView):
 
         return super().update(request, *args, **kwargs)
 
+
 class CancelOrderView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
 
     @swagger_auto_schema(
-        operation_description="Cancel an order by ID.",
-        responses={200: "Order cancelled successfully.", 400: "Validation Error", 404: "Not Found"},
+        operation_description="Cancel an order (only if pending). Use with caution — legacy or admin only.",
+        responses={200: "Order cancelled successfully.", 400: "Invalid", 404: "Not Found"},
     )
     def post(self, request, pk):
         try:
@@ -103,6 +103,7 @@ class CancelOrderView(APIView):
         if order.status != "pending":
             return Response({"detail": "Only pending orders can be cancelled."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Restore stock
         for item in order.items.all():
             book = item.book
             book.stock += item.quantity
