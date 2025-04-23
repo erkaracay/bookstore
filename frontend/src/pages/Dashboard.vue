@@ -52,8 +52,18 @@
 
     <!-- Seller -->
     <div v-else-if="auth.user?.user_type === 'seller'">
-      <h2 class="text-xl font-semibold mb-4">Your Books</h2>
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold">Your Books</h2>
+        <router-link
+          to="/books/create"
+          class="text-sm bg-primary text-white px-3 py-1 rounded hover:bg-opacity-90 transition"
+        >
+          + Add Book
+        </router-link>
+      </div>
+
       <div v-if="books.length === 0" class="text-gray-500">No books listed yet.</div>
+
       <ul v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <li v-for="book in books" :key="book.id" class="bg-white border p-4 rounded shadow-sm">
           <p class="text-lg font-semibold text-gray-800">{{ book.title }}</p>
@@ -107,8 +117,10 @@ onMounted(async () => {
     }
 
     if (userType === 'seller') {
-      const res = await axios.get('/books/')
-      books.value = res.data.filter(book => book.author === auth.user.first_name) // adjust filter as needed
+      const res = await axios.get('/books/', {
+        params: { seller: auth.user.email }
+      })
+      books.value = res.data
     }
 
     // Admin view: no data yet

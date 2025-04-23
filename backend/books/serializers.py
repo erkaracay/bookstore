@@ -4,7 +4,8 @@ from .models import Book
 class BookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
-        fields = ['id', 'title', 'slug', 'author', 'price', 'stock', 'description', 'published_date']
+        seller = serializers.ReadOnlyField(source='seller.email')
+        fields = ['id', 'title', 'slug', 'author', 'price', 'stock', 'description', 'published_date', 'seller']
         read_only_fields = ['slug']
 
     def validate_title(self, value):

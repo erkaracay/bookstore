@@ -46,6 +46,15 @@ class BookListCreateView(generics.ListCreateAPIView):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    def perform_create(self, serializer):
+        serializer.save(seller=self.request.user)
+
+    def get_queryset(self):
+        seller_email = self.request.query_params.get('seller')
+        if seller_email:
+            return Book.objects.filter(seller__email=seller_email)
+        return Book.objects.all()
+
 @method_decorator(cache_page(30), name='dispatch')
 class BookDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Book.objects.all()

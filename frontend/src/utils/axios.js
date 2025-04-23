@@ -8,7 +8,6 @@ const instance = axios.create({
 const publicEndpoints = [
   '/api/token/',
   '/users/register/',
-  '/books/',
 ]
 
 instance.interceptors.request.use(config => {

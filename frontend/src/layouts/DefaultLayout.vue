@@ -32,7 +32,6 @@
                 {{ dashboardLabel }}
               </router-link>
 
-
                 <!-- Future: Profile page -->
                 <router-link
                   to="/profile"
@@ -45,8 +44,12 @@
                 >Logout</button>
               </div>
             </div>
-            <router-link to="/cart" class="text-gray-700 hover:text-primary transition">
-              🛒 Cart
+            <router-link
+              v-if="auth.user?.user_type === 'buyer'"
+              to="/cart"
+              class="hover:text-primary"
+            >
+              Cart
             </router-link>
           </template>
 

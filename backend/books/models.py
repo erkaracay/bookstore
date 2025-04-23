@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from django.conf import settings
 
 class Book(models.Model):
     title = models.CharField(max_length=255)
@@ -9,6 +10,11 @@ class Book(models.Model):
     stock = models.PositiveIntegerField(default=0)
     description = models.TextField(blank=True, null=True)
     published_date = models.DateField()
+    seller = models.ForeignKey(
+    settings.AUTH_USER_MODEL,
+    on_delete=models.CASCADE,
+    related_name='books_sold'
+)
 
     def __init__(self, *args, **kwargs):
         """

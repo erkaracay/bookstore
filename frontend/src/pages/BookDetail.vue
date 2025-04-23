@@ -11,7 +11,10 @@
       <p class="text-sm text-gray-500 mb-4">Stock: {{ book.stock }}</p>
       <p class="mb-6 text-gray-700">{{ book.description }}</p>
 
-      <div class="flex items-center gap-4 mt-6">
+      <div
+        v-if="auth.user?.user_type === 'buyer'"
+        class="flex items-center gap-4 mt-6"
+      >
       <!-- Quantity Input with +/- buttons -->
       <div class="flex items-center border rounded px-2 py-1">
         <button
@@ -58,9 +61,11 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from '@/utils/axios'
+import { useAuthStore } from '@/store/auth'
 
 const route = useRoute()
 const slug = route.params.slug
+const auth = useAuthStore()
 
 const loading = ref(true)
 const book = ref(null)
@@ -93,7 +98,6 @@ async function addToCart() {
     adding.value = false
   }
 }
-
 
 onMounted(async () => {
   try {
