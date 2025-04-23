@@ -3,10 +3,10 @@ from .models import Book
 
 class BookSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Book
         seller = serializers.ReadOnlyField(source='seller.email')
-        fields = ['id', 'title', 'slug', 'author', 'price', 'stock', 'description', 'published_date', 'seller']
-        read_only_fields = ['slug']
+        model = Book
+        fields = ['id', 'title', 'slug', 'author', 'price', 'stock', 'description', 'published_date']
+        read_only_fields = ['slug', 'seller']
 
     def validate_title(self, value):
         qs = Book.objects.filter(title__iexact=value)

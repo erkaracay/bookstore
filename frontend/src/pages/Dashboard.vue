@@ -49,11 +49,10 @@
       </ul>
     </div>
 
-
     <!-- Seller -->
     <div v-else-if="auth.user?.user_type === 'seller'">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-semibold">Your Books</h2>
+        <h2 class="text-xl font-semibold">Add, Edit or Delete Books</h2>
         <router-link
           to="/books/create"
           class="text-sm bg-primary text-white px-3 py-1 rounded hover:bg-opacity-90 transition"
@@ -69,6 +68,15 @@
           <p class="text-lg font-semibold text-gray-800">{{ book.title }}</p>
           <p class="text-sm text-gray-500">by {{ book.author }}</p>
           <p class="text-sm text-gray-700 font-medium">${{ book.price }}</p>
+
+          <div class="flex justify-between items-center mt-2 text-sm">
+          <router-link
+            :to="`/books/${book.id}/edit`"
+            class="text-primary hover:underline"
+          >
+            ✏️ Edit
+          </router-link>
+          </div>
         </li>
       </ul>
     </div>
@@ -103,7 +111,7 @@ const books = ref([])
 const pageTitle = computed(() => {
   const type = auth.user?.user_type
   if (type === 'buyer') return 'Purchase History'
-  if (type === 'seller') return 'My Books'
+  if (type === 'seller') return 'Your Books'
   return 'Dashboard'
 })
 

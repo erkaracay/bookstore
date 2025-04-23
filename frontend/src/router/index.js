@@ -21,6 +21,7 @@ const routes = [
   { path: '/cart', component: Cart },
   // { path: '/admin', component: AdminDashboard, meta: { requiresAuth: true, role: 'admin' } },
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound },
+  { path: '/books/:id/edit', name: 'BookEdit', component: () => import('@/pages/EditBook.vue'), meta: { requiresAuth: true, roles: ['seller', 'admin'] } },
 ]
 
 const router = createRouter({
