@@ -64,18 +64,28 @@
       <div v-if="books.length === 0" class="text-gray-500">No books listed yet.</div>
 
       <ul v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <li v-for="book in books" :key="book.id" class="bg-white border p-4 rounded shadow-sm">
+        <li
+          v-for="book in books"
+          :key="book.id"
+          class="bg-white border p-4 rounded shadow-sm space-y-1"
+        >
           <p class="text-lg font-semibold text-gray-800">{{ book.title }}</p>
           <p class="text-sm text-gray-500">by {{ book.author }}</p>
           <p class="text-sm text-gray-700 font-medium">${{ book.price }}</p>
 
-          <div class="flex justify-between items-center mt-2 text-sm">
-          <router-link
-            :to="`/books/${book.id}/edit`"
-            class="text-primary hover:underline"
-          >
-            ✏️ Edit
-          </router-link>
+          <div class="flex gap-2 mt-3">
+            <router-link
+              :to="`/books/${book.id}/edit`"
+              class="text-sm text-blue-600 hover:underline"
+            >
+              Edit
+            </router-link>
+            <button
+              @click="promptDelete(book.id)"
+              class="text-sm text-red-600 hover:underline"
+            >
+              Delete
+            </button>
           </div>
         </li>
       </ul>
@@ -95,18 +105,34 @@
     </div>
   </div>
 
+  <ModalConfirm
+  :show="showModal"
+  title="Delete Book"
+  message="Are you sure you want to delete this book? This action cannot be undone."
+  confirm-text="Delete"
+  @cancel="showModal = false"
+  @confirm="confirmDelete"
+/>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, h } from 'vue'
 import axios from '@/utils/axios'
 import { useAuthStore } from '@/store/auth'
 import dayjs from '@/utils/dayjs'
+import ModalConfirm from '@/components/ModalConfirm.vue'
+import { useToast } from 'vue-toastification'
 
 const auth = useAuthStore()
 const loading = ref(true)
 const orders = ref([])
 const books = ref([])
+
+const showModal = ref(false)
+const bookToDelete = ref(null)
+const toast = useToast()
+const recentlyDeleted = ref(null)
+let undoTimer = null
 
 const pageTitle = computed(() => {
   const type = auth.user?.user_type
@@ -139,20 +165,70 @@ onMounted(async () => {
   }
 })
 
-// function formatDate(iso) {
-//   const options = {
-//     year: 'numeric',
-//     month: 'short',
-//     day: 'numeric',
-//     hour: '2-digit',
-//     minute: '2-digit',
-//   }
-//   return new Date(iso).toLocaleString(navigator.language, { ...options, hour12: false })
-// }
+function promptDelete(bookId) {
+  showModal.value = true
+  bookToDelete.value = bookId
+}
+
+async function confirmDelete() {
+  if (!bookToDelete.value) return
+
+  const id = bookToDelete.value
+  const book = books.value.find(b => b.id === id)
+
+  if (!book) return
+
+  books.value = books.value.filter(b => b.id !== id)
+  recentlyDeleted.value = book
+
+  // Show toast using a custom Vue component
+  toast(
+    () =>
+      h('div', { class: 'flex justify-between items-center gap-3' }, [
+        h('span', '📚 Book deleted.'),
+        h(
+          'button',
+          {
+            class: 'bg-white text-blue-600 px-3 py-1 rounded text-sm hover:bg-gray-100 transition',
+            onClick: () => {
+              books.value.push(book)
+              books.value.sort((a, b) => a.id - b.id)
+              recentlyDeleted.value = null
+              clearTimeout(undoTimer)
+              toast.clear()
+            },
+          },
+          'Undo'
+        ),
+      ]),
+    {
+      timeout: 5000,
+      closeOnClick: false,
+      hideProgressBar: false,
+    }
+  )
+
+  clearTimeout(undoTimer)
+  undoTimer = setTimeout(async () => {
+    if (recentlyDeleted.value?.id === id) {
+      try {
+        await axios.delete(`/books/${id}/`)
+      } catch (err) {
+        console.error('Actual delete failed:', err)
+      } finally {
+        recentlyDeleted.value = null
+      }
+    }
+  }, 5000)
+
+  showModal.value = false
+  bookToDelete.value = null
+}
 
 function formatRelativeTime(iso) {
   return dayjs(iso).fromNow() // e.g. "3 hours ago"
 }
+
 function statusBadgeClass(status) {
   switch (status) {
     case 'pending':
