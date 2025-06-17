@@ -3,72 +3,35 @@
     <h1 class="text-2xl font-bold mb-6 text-primary text-center">📘 Add a New Book</h1>
 
     <form @submit.prevent="submitBook" class="space-y-6">
-      <FormField
-        v-model="form.title"
-        field="title"
-        name="Title"
-        :error="errors.title"
-        @validate="validateField"
-      />
+      <FormField v-model="form.title" field="title" name="Title" :error="errors.title" @validate="validateField" />
 
-      <FormField
-        v-model="form.author"
-        field="author"
-        name="Author"
-        :error="errors.author"
-        @validate="validateField"
-      />
+      <FormField v-model="form.author" field="author" name="Author" :error="errors.author" @validate="validateField" />
 
       <!-- 📖 Description -->
       <div>
         <label class="block text-sm font-medium mb-1" for="description">Description</label>
-        <textarea
-          id="description"
-          v-model="form.description"
-          rows="4"
-          class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-        ></textarea>
+        <textarea id="description" v-model="form.description" rows="4"
+          class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
         <p v-if="errors.description" class="text-sm text-red-600 mt-1">{{ errors.description }}</p>
       </div>
 
       <!-- 💰 Price -->
-      <FormField
-        v-model="form.price"
-        field="price"
-        name="Price"
-        type="number"
-        :error="errors.price"
-        @validate="validateField"
-      />
+      <FormField v-model="form.price" field="price" name="Price" type="number" :error="errors.price"
+        @validate="validateField" />
 
       <!-- 📦 Stock -->
-      <FormField
-        v-model="form.stock"
-        field="stock"
-        name="Stock"
-        type="number"
-        :error="errors.stock"
-        @validate="validateField"
-      />
+      <FormField v-model="form.stock" field="stock" name="Stock" type="number" :error="errors.stock"
+        @validate="validateField" />
 
       <!-- 📅 Published Date -->
       <div>
         <label class="block text-sm font-medium mb-1" for="published_date">Published Date</label>
-        <FormField
-          v-model="form.published_date"
-          field="published_date"
-          name=""
-          type="date"
-          :error="errors.published_date"
-          @validate="validateField"
-        />
+        <FormField v-model="form.published_date" field="published_date" name="" type="date"
+          :error="errors.published_date" @validate="validateField" />
       </div>
 
-      <button
-        type="submit"
-        class="w-full bg-primary text-white py-2 rounded hover:bg-opacity-90 transition"
-        :disabled="loading"
-      >
+      <button type="submit" class="w-full bg-primary text-white py-2 rounded hover:bg-opacity-90 transition"
+        :disabled="loading">
         {{ loading ? 'Saving...' : 'Add Book' }}
       </button>
 
@@ -85,8 +48,10 @@ import { z } from 'zod'
 import axios from '@/utils/axios'
 import FormField from '@/components/form/FormField.vue'
 import { useAuthStore } from '@/store/auth'
+import { useToast } from 'vue-toastification'
 
 const auth = useAuthStore()
+const toast = useToast()
 
 // ✅ Form State
 const form = reactive({
@@ -132,26 +97,35 @@ function formatDateToString(date) {
 async function submitBook() {
   try {
     loading.value = true
-    success.value = false
-    errors.value = {}
+    // clear last errors
+    Object.keys(errors).forEach(key => (errors[key] = ''))
 
+    // validate types
     const parsed = schema.parse({
       ...form,
       price: parseFloat(form.price),
-      stock: parseInt(form.stock),
+      stock: parseInt(form.stock, 10),
       published_date: formatDateToString(form.published_date),
     })
 
     await axios.post('/books/', parsed)
 
-    success.value = true
+    toast.success('📘 Book created successfully!', {
+      timeout: 3000,
+      closeOnClick: true,
+    })
+
+    // clear the form
     Object.keys(form).forEach(key => (form[key] = ''))
+
   } catch (err) {
     if (err.name === 'ZodError') {
-      err.errors.forEach(e => (errors[e.path[0]] = e.message))
+      err.errors.forEach(e => {
+        errors[e.path[0]] = e.message
+      })
     } else {
       console.error('Book creation failed:', err)
-      alert('Failed to create book. Check console.')
+      toast.error('Failed to create book. Check console.')
     }
   } finally {
     loading.value = false

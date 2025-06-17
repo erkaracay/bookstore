@@ -85,10 +85,12 @@ import { useRoute, useRouter } from 'vue-router'
 import axios from '@/utils/axios'
 import FormField from '@/components/form/FormField.vue'
 import { z } from 'zod'
+import { useToast } from 'vue-toastification'
 
 const route = useRoute()
 const router = useRouter()
 const bookId = route.params.id
+const toast = useToast()
 
 const loading = ref(false)
 const loaded = ref(false)
@@ -145,24 +147,40 @@ onMounted(async () => {
 async function updateBook() {
   try {
     loading.value = true
-    success.value = false
+    // clear last errors
+    Object.keys(errors).forEach(key => (errors[key] = ''))
 
-    form.published_date = new Date(form.published_date).toISOString().split('T')[0]
+    // normalize date to YYYY-MM-DD
+    form.published_date = new Date(form.published_date)
+      .toISOString()
+      .split('T')[0]
 
+    // validate types
     const parsed = schema.parse({
       ...form,
       price: parseFloat(form.price),
-      stock: parseInt(form.stock),
+      stock: parseInt(form.stock, 10),
+      published_date: form.published_date,
     })
 
     await axios.put(`/books/${bookId}/`, parsed)
-    success.value = true
+
+    toast.success('✏️ Book updated successfully!', {
+      timeout: 3000,
+      closeOnClick: true,
+    })
+
   } catch (err) {
     if (err.name === 'ZodError') {
-      err.errors.forEach(e => (errors[e.path[0]] = e.message))
+      err.errors.forEach(e => {
+        errors[e.path[0]] = e.message
+      })
     } else {
       console.error('Update failed:', err)
-      alert('Update failed')
+      toast.error('❌ Failed to update book. Check console.', {
+        timeout: 3000,
+        closeOnClick: true,
+      })
     }
   } finally {
     loading.value = false
