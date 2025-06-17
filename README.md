@@ -1,4 +1,3 @@
-```
 # 📚 Bookstore
 
 A full-stack web application for buying and selling books.  
@@ -117,6 +116,3 @@ With Docker & Compose you get live-reload in both services:
 
 This project is open source under the MIT License.  
 Feel free to use, modify, and distribute!
-
-Happy coding! 🚀  
-```
