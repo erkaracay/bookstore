@@ -1,5 +1,5 @@
 <template>
-  <div class="pt-16 pb-10 bg-neutral min-h-screen px-4">
+  <div class="pt-16 pb-10 bg-neutral px-4">
     <div class="max-w-md mx-auto bg-white p-6 rounded shadow">
       <h2 class="text-2xl font-bold text-primary mb-6 text-center">Login</h2>
 
